@@ -1,5 +1,5 @@
 -- ========== CONFIGURATION WEBHOOK ==========
-local WEBHOOK_URL = "https://discord.com/api/webhooks/VOTRE_WEBHOOK_ICI"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1443355178865660025/HwMypJGRtJucea4rULHsZ_8Nr9d_fyelG0PqFgomXa13sxx4lcfg5cvH1pLa5mi6eVuW"
 -- ===========================================
 
 local Players = game:GetService("Players")
